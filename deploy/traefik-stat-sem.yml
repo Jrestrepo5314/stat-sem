@@ -1,0 +1,19 @@
+# Enrutado de la app estadistica. Traefik lo carga en caliente al guardarlo en
+# /docker/traefik/dynamic/ y pide el certificado de Let's Encrypt solo.
+http:
+  routers:
+    stat-sem:
+      rule: Host(`sem.jarestrepo.com`)
+      entryPoints:
+        - web
+        - websecure
+      tls:
+        certResolver: letsencrypt
+      service: stat-sem-svc
+
+  services:
+    stat-sem-svc:
+      loadBalancer:
+        servers:
+          - url: http://127.0.0.1:8789
+        passHostHeader: true

@@ -1,0 +1,31 @@
+[Unit]
+Description=Estadistica SEM (FastAPI + frontend compilado)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=statsem
+Group=statsem
+WorkingDirectory=/opt/stat-sem/backend
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/stat-sem/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8789 --proxy-headers --forwarded-allow-ips=127.0.0.1
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=stat-sem
+
+# Solo puede escribir en data/, donde guarda los conjuntos de datos de cada sesion.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/stat-sem/backend/data
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+MemoryMax=1200M
+
+[Install]
+WantedBy=multi-user.target
