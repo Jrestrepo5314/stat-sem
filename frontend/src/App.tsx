@@ -51,6 +51,16 @@ export default function App() {
 
   useEffect(() => { cargarLista() }, [cargarLista])
 
+  // ?abrir=<url>: el tutor del libro manda aquí sus conjuntos de datos
+  useEffect(() => {
+    const url = new URLSearchParams(location.search).get('abrir')
+    if (!url) return
+    history.replaceState(null, '', location.pathname)
+    api.importarURL(url)
+      .then(async (r) => { await cargarLista(); await abrirDataset(r.id); avisar(`Abierto ${r.nombre}: ${r.n_filas} casos, ${r.n_variables} variables`, 'info') })
+      .catch((e) => avisar((e as Error).message))
+  }, [cargarLista, abrirDataset, avisar])
+
   const subir = async (archivo: File) => {
     try {
       const r = await api.subirArchivo(archivo)

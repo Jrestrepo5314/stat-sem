@@ -6,9 +6,11 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+import httpx
 import pandas as pd
 from fastapi import APIRouter, Header, HTTPException, Query, UploadFile
 from fastapi.responses import Response
+from pydantic import BaseModel
 
 from .almacen import almacen
 from .analisis import PROCEDIMIENTOS
@@ -54,6 +56,51 @@ async def subir(archivo: UploadFile, cliente: str = Cliente):
         ruta.unlink(missing_ok=True)
     ds = almacen.crear(archivo.filename or "datos", df, variables, cliente)
     return ds.resumen()
+
+
+class ImportarURL(BaseModel):
+    url: str
+
+
+# Solo se descargan datos de sitios propios o de repositorios conocidos: el servidor
+# no debe convertirse en un descargador genérico.
+HOSTS_PERMITIDOS = {
+    "sem.jarestrepo.com", "estadistica.jarestrepo.com", "tutor.jarestrepo.com", "jarestrepo.com",
+    "localhost", "127.0.0.1", "zenodo.org", "raw.githubusercontent.com",
+}
+
+
+@router.post("/datasets/importar", response_model=ResumenDataset)
+def importar(cuerpo: ImportarURL, cliente: str = Cliente):
+    """Abre un archivo de datos por URL (lo usa el tutor del libro con sus conjuntos de datos)."""
+    from urllib.parse import urlparse
+
+    u = urlparse(cuerpo.url)
+    if u.scheme not in ("http", "https") or u.hostname not in HOSTS_PERMITIDOS:
+        raise HTTPException(400, "Solo se pueden abrir datos desde los sitios del autor o de Zenodo")
+    nombre = Path(u.path).name or "datos.csv"
+    sufijo = Path(nombre).suffix.lower()
+    if sufijo not in (".sav", ".csv", ".txt", ".xlsx", ".xls"):
+        raise HTTPException(400, f"Formato no soportado: {sufijo}")
+    try:
+        with httpx.Client(follow_redirects=True, timeout=30) as h:
+            r = h.get(cuerpo.url)
+            r.raise_for_status()
+            contenido = r.content
+    except httpx.HTTPError as e:
+        raise HTTPException(502, f"No se pudo descargar el archivo: {e}")
+    if len(contenido) > MAX_BYTES:
+        raise HTTPException(413, "El archivo supera los 100 MB")
+    with tempfile.NamedTemporaryFile(suffix=sufijo, delete=False) as tmp:
+        tmp.write(contenido)
+        ruta = Path(tmp.name)
+    try:
+        df, variables = leer_archivo(ruta)
+    except Exception as e:
+        raise HTTPException(400, f"No se pudo leer el archivo: {e}")
+    finally:
+        ruta.unlink(missing_ok=True)
+    return almacen.crear(nombre, df, variables, cliente).resumen()
 
 
 @router.post("/datasets/nuevo", response_model=ResumenDataset)

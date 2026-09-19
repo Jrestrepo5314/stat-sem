@@ -35,6 +35,8 @@ export const api = {
     return pedir<ResumenDataset>('/datasets', { method: 'POST', body: fd })
   },
 
+  importarURL: (url: string) => pedir<ResumenDataset>('/datasets/importar', json({ url })),
+
   nuevoDataset: (nombre = 'Sin título') =>
     pedir<ResumenDataset>(`/datasets/nuevo?nombre=${encodeURIComponent(nombre)}`, { method: 'POST' }),
 

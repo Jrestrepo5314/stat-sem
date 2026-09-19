@@ -15,6 +15,18 @@ app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http
 app.include_router(router)
 
 
+@app.middleware("http")
+async def cabeceras_seguridad(request, call_next):
+    """La app se incrusta en el tutor del libro (iframe): solo desde los sitios del autor."""
+    respuesta = await call_next(request)
+    respuesta.headers["Content-Security-Policy"] = (
+        "frame-ancestors 'self' https://*.jarestrepo.com http://localhost:* http://127.0.0.1:*"
+    )
+    respuesta.headers["X-Content-Type-Options"] = "nosniff"
+    respuesta.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return respuesta
+
+
 @app.get("/api/salud")
 def salud():
     """Comprobación que usan el despliegue y el monitor: responde si el servidor está arriba."""
