@@ -65,4 +65,5 @@ jobs:
             sleep 2 && systemctl is-active stat-sem'
 
       - name: Comprobar en linea
-        run: curl -fsS -H 'X-Cliente: actions' "${{ secrets.SITIO_URL }}/api/salud"
+        run: |
+          curl -fsS -H 'X-Cliente: actions' "${{ secrets.SITIO_URL }}/api/salud"
