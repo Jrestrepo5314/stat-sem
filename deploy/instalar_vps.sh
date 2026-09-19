@@ -38,6 +38,10 @@ else
   echo "AVISO: no existe $TRAEFIK_DIR; el servicio escucha en 127.0.0.1:8789 y hay que enrutarlo a mano"
 fi
 
-sleep 2
+# uvicorn tarda unos segundos en importar scipy y semopy: esperar a que escuche
+for i in $(seq 1 30); do
+  curl -fsS -H 'X-Cliente: instalador' http://127.0.0.1:8789/api/salud >/dev/null 2>&1 && break
+  sleep 2
+done
 systemctl --no-pager --lines=5 status stat-sem || true
 curl -fsS -H 'X-Cliente: instalador' http://127.0.0.1:8789/api/salud && echo " <- responde"

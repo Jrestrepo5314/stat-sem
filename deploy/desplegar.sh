@@ -43,9 +43,13 @@ install -m 644 deploy/stat-sem.service /etc/systemd/system/stat-sem.service
 [ -d /docker/traefik/dynamic ] && install -m 644 deploy/traefik-stat-sem.yml /docker/traefik/dynamic/stat-sem.yml
 systemctl daemon-reload
 systemctl restart stat-sem
-sleep 2
+# uvicorn tarda unos segundos en importar scipy y semopy: esperar a que escuche
+for i in \$(seq 1 30); do
+  curl -fsS -H "X-Cliente: despliegue" http://127.0.0.1:8789/api/salud >/dev/null 2>&1 && break
+  sleep 2
+done
 systemctl is-active stat-sem
 EOF
 
 echo "== comprobar"
-curl -fsS -H 'X-Cliente: despliegue' "$URL/api/salud" && echo " <- $URL responde"
+curl -fsS --retry 5 --retry-delay 3 --retry-all-errors -H 'X-Cliente: despliegue' "$URL/api/salud" && echo " <- $URL responde"
