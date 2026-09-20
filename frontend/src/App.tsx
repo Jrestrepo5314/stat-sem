@@ -197,7 +197,9 @@ export default function App() {
             {datasets.map((d) => <option key={d.id} value={d.id}>{d.nombre} ({d.n_filas}×{d.n_variables})</option>)}
           </select>
         </div>
-        {puedePantallaCompleta && (
+        {/* Con el lienzo abierto este botón queda bajo el fondo del modal y el clic no
+            le llega: Jorge lo pulsaba y «no funcionaba». El lienzo tiene el suyo. */}
+        {puedePantallaCompleta && !lienzoSEM && (
           <button className="pantalla-completa" onClick={alternarPantallaCompleta}
             title={enPantallaCompleta ? 'Volver al tamaño normal (Esc)' : 'La aplicación a pantalla completa; Esc para volver'}>
             {enPantallaCompleta ? '⤡ Salir' : '⛶ Pantalla completa'}

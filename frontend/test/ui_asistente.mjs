@@ -3,7 +3,8 @@
 // y el enlace profundo con el que llega el tutor del libro (?ejemplo= &modelo=).
 // Uso: node test/ui_asistente.mjs [carpeta_capturas]   (requiere backend en :8000 y vite en :5173)
 import puppeteer from 'puppeteer-core'
-import { existsSync, mkdirSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs'
+import { resolve } from 'node:path'
 
 const URL = process.env.URL || 'http://127.0.0.1:5173'
 const CHROME = ['C:/Program Files/Google/Chrome/Application/chrome.exe',
@@ -40,6 +41,8 @@ await page.waitForSelector('.lienzo-sem textarea', { timeout: 20000 })
 await page.waitForFunction(() => document.querySelectorAll('.lienzo .react-flow__node').length === 12, { timeout: 10000 })
 await espera(500)
 await foto('a2_ejemplo_guiado_en_el_lienzo')
+if (await page.$('.cabecera .pantalla-completa')) fallo('con el lienzo abierto, el botón de pantalla completa de la cabecera sigue ahí (y no puede recibir el clic)')
+if (!(await page.$('.lienzo-cabecera .pantalla-completa'))) fallo('el lienzo no tiene botón de pantalla completa')
 const s1 = await sintaxis()
 if (!s1.includes('clima =~ cli1 + cli2 + cli3') || !s1.includes('desempeno ~ compromiso')) fallo('el ejemplo guiado no dejó el modelo en el lienzo: ' + s1)
 
@@ -70,6 +73,31 @@ if (!s3.includes('COM ~ CLI') || !s3.includes('DES ~ COM')) fallo('la estructura
 await page.mouse.click(8, 8)
 await espera(300)
 if (!(await page.$('.lienzo-sem textarea'))) fallo('un clic en el fondo cerró el lienzo')
+// el PNG exportado abarca el modelo entero (no lo que cabe en la ventana): sus
+// dimensiones son las del rectángulo de los nodos más 40 px de margen, a escala 2
+const carpetaDescargas = resolve(OUT, 'descargas')
+rmSync(carpetaDescargas, { recursive: true, force: true }); mkdirSync(carpetaDescargas, { recursive: true })
+const cdp = await page.createCDPSession()
+await cdp.send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: carpetaDescargas })
+const esperado = await page.evaluate(() => {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+  for (const n of document.querySelectorAll('.lienzo .react-flow__node')) {
+    const m = /translate\(\s*(-?[\d.]+)px,\s*(-?[\d.]+)px\)/.exec(n.style.transform)
+    const x = Number(m[1]), y = Number(m[2])
+    minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x + n.offsetWidth); maxY = Math.max(maxY, y + n.offsetHeight)
+  }
+  return { ancho: Math.ceil(maxX - minX + 80) * 2, alto: Math.ceil(maxY - minY + 80) * 2 }
+})
+await clicTexto('.herramientas button', 'PNG')
+let png = null
+for (let i = 0; i < 40 && !png; i++) { await espera(250); png = readdirSync(carpetaDescargas).find((f) => f.endsWith('.png')) }
+if (!png) fallo('no se descargó el PNG del lienzo')
+else {
+  const b = readFileSync(resolve(carpetaDescargas, png))
+  const ancho = b.readUInt32BE(16), alto = b.readUInt32BE(20)
+  if (Math.abs(ancho - esperado.ancho) > 4 || Math.abs(alto - esperado.alto) > 4) fallo(`el PNG no abarca el modelo entero: ${ancho}×${alto}, esperado ${esperado.ancho}×${esperado.alto}`)
+  console.log('png exportado:', png, `${ancho}×${alto}`)
+}
 await page.click('.asistente-sem summary')
 await espera(300)
 await foto('a4_asistente_con_ayuda_abierta')

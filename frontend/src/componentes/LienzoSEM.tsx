@@ -162,7 +162,7 @@ export default function LienzoSEM({ variables, sintaxis, posiciones, estimacione
     cambiarModelo(medicionPropuesta, {})
   }
   /** Paso 2: una cadena entre los constructos, en el orden en que aparecen. */
-  const proponerPaso2 = () => cambiarModelo(proponerCadena(modelo))
+  const proponerPaso2 = () => cambiarModelo(proponerCadena(modelo), {})  // trazado nuevo: en capas, no apilados
   /** Estimar solo la medición (CFA) antes de creer en las flechas estructurales. */
   const estimarCFA = () => ejecutar(generar(soloMedicion(modelo)))
   const tieneRegresiones = modelo.regresiones.length > 0
