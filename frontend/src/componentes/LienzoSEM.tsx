@@ -171,8 +171,11 @@ export default function LienzoSEM({ variables, sintaxis, posiciones, estimacione
   const enModelo = new Set([...modelo.observadas, ...modelo.latentes])
 
   return (
-    <div className="modal-fondo" onClick={onCerrar}>
-      <div className="modal lienzo-sem" onClick={(e) => e.stopPropagation()}>
+    // El fondo NO cierra el lienzo. Es translúcido y deja ver la cabecera de la
+    // app; Jorge quiso pulsar «Pantalla completa» allí, el clic cayó en el fondo
+    // y el modelo del libro desapareció. Se cierra con «Cerrar» o con la ×.
+    <div className="modal-fondo">
+      <div className="modal lienzo-sem">
         <div className="lienzo-cabecera">
           <h3>Modelo de ecuaciones estructurales</h3>
           <div className="herramientas">
