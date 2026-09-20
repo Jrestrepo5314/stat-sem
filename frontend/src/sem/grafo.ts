@@ -57,17 +57,22 @@ export function aristasDeModelo(m: ModeloSEM, pos: Posiciones, etiquetas?: Etiqu
   const out: Edge[] = []
   for (const [lat, ind] of m.cargas) {
     const k = claveArista('carga', lat, ind)
-    out.push({ id: k, source: lat, target: ind, ...conectores(pos, lat, ind), ...comun(rotulo(k)),
+    out.push({ id: k, source: lat, target: ind, ...conectores(pos, lat, ind), ...comun(rotulo(k)), type: 'rotulada', data: { t: 0.5 },
       markerEnd: flecha('#334e68'), style: { stroke: '#334e68', strokeWidth: 1.4 } })
   }
   for (const [dep, pred] of m.regresiones) {
     const k = claveArista('regresion', pred, dep)
-    out.push({ id: k, source: pred, target: dep, ...conectores(pos, pred, dep), ...comun(rotulo(k)),
+    // el rótulo va cerca del origen: en el punto medio chocaba con las cargas de otro constructo
+    out.push({ id: k, source: pred, target: dep, ...conectores(pos, pred, dep), ...comun(rotulo(k)), type: 'rotulada', data: { t: 0.3 },
       markerEnd: flecha('#1f5f8b'), style: { stroke: '#1f5f8b', strokeWidth: 2.2 } })
   }
   for (const [a, b] of m.covarianzas) {
     const k = claveArista('covarianza', a, b)
-    out.push({ id: k, source: a, target: b, ...conectores(pos, a, b), ...comun(rotulo(k)), type: 'smoothstep',
+    // dos constructos apilados en la misma columna se unen por el costado izquierdo,
+    // no de arriba abajo a través de los indicadores del primero
+    const apilados = Math.abs((pos[a]?.x ?? 0) - (pos[b]?.x ?? 0)) < ANCHO_LAT
+    const asas = apilados ? { sourceHandle: 'l', targetHandle: 'l' } : conectores(pos, a, b)
+    out.push({ id: k, source: a, target: b, ...asas, ...comun(rotulo(k)), type: 'smoothstep',
       markerStart: flecha('#7b8794'), markerEnd: flecha('#7b8794'),
       style: { stroke: '#7b8794', strokeDasharray: '6 4', strokeWidth: 1.4 } })
   }

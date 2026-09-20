@@ -109,7 +109,7 @@ for (const id of ['F1', 'satisfaccion']) {
 await page.waitForFunction(() => document.querySelectorAll('.lienzo .react-flow__node').length === 12, { timeout: 5000 })
 await clicTexto('.panel-sintaxis .fila-botones button', 'Estimar el modelo completo')
 await page.waitForFunction(() => document.querySelectorAll('.salida').length >= 3, { timeout: 30000 })
-await page.waitForFunction(() => document.querySelectorAll('.lienzo .react-flow__edge-textwrapper').length >= 9, { timeout: 10000 })
+await page.waitForFunction(() => document.querySelectorAll('.lienzo .rotulo-arista').length >= 9, { timeout: 10000 })
 await espera(600)
 await foto('09_lienzo_con_estimaciones')
 await clicTexto('.panel-sintaxis .fila-botones button', 'Cerrar')

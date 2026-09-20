@@ -53,7 +53,7 @@ const titulosCFA = await page.evaluate(() => [...document.querySelectorAll('.sal
 if (titulosCFA.some((t) => t.includes('estructural'))) fallo('la estimación solo de medición trajo tabla estructural: ' + titulosCFA.join(' | '))
 await clicTexto('.panel-sintaxis .fila-botones button', 'Estimar el modelo completo')
 await page.waitForFunction(() => document.querySelectorAll('.salida').length >= 2, { timeout: 30000 })
-await page.waitForFunction(() => document.querySelectorAll('.lienzo .react-flow__edge-textwrapper').length >= 9, { timeout: 10000 })
+await page.waitForFunction(() => document.querySelectorAll('.lienzo .rotulo-arista').length >= 9, { timeout: 10000 })
 await espera(400)
 await foto('a3_medicion_y_completo_estimados')
 

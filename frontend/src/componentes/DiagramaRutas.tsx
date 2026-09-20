@@ -6,6 +6,7 @@ import { disponer } from '../sem/disposicion'
 import { aristasDeModelo, etiquetasDeGrafo, modeloDeGrafo, nodosDeModelo } from '../sem/grafo'
 import type { BloqueGrafo } from '../tipos'
 import { TIPOS_NODO } from './NodosSEM'
+import { TIPOS_ARISTA } from './AristasSEM'
 
 /** Diagrama de rutas de un resultado: solo lectura, con los coeficientes estimados. */
 export default function DiagramaRutas({ grafo }: { grafo: BloqueGrafo }) {
@@ -19,7 +20,7 @@ export default function DiagramaRutas({ grafo }: { grafo: BloqueGrafo }) {
 
   return (
     <div className="diagrama" ref={ref}>
-      <ReactFlow defaultNodes={nodos} defaultEdges={aristas} nodeTypes={TIPOS_NODO} fitView nodesConnectable={false}
+      <ReactFlow defaultNodes={nodos} defaultEdges={aristas} nodeTypes={TIPOS_NODO} edgeTypes={TIPOS_ARISTA} fitView nodesConnectable={false}
         proOptions={{ hideAttribution: true }} minZoom={0.3}>
         <Background gap={16} color="#e4e7eb" />
         <Controls showInteractive={false} />

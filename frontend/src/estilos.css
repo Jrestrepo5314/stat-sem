@@ -165,3 +165,6 @@ input[type="text"], input:not([type]), select, textarea { border: 1px solid var(
 .cabecera .pantalla-completa { white-space: nowrap; }
 .lienzo-cabecera .pantalla-completa { margin-left: auto; white-space: nowrap; }
 .lienzo-cabecera .cerrar { margin-left: 0; }
+
+/* rótulo de una arista, colocado en el punto del trazo que decide grafo.ts */
+.rotulo-arista { position: absolute; font-size: 11px; color: #1f2933; background: rgba(255,255,255,0.9); padding: 0 3px; border-radius: 3px; pointer-events: all; }

@@ -10,6 +10,7 @@ import { aristasDeModelo, etiquetasDeGrafo, modeloDeGrafo, nodosDeModelo } from 
 import { analizar, compatibles, generar, modeloVacio, nombreLatenteLibre, proponerCadena, proponerMedicion, soloMedicion, iguales, type ModeloSEM } from '../sem/sintaxis'
 import type { BloqueGrafo, Variable } from '../tipos'
 import { TIPOS_NODO } from './NodosSEM'
+import { TIPOS_ARISTA } from './AristasSEM'
 import { alternarPantallaCompleta, puedePantallaCompleta, usePantallaCompleta } from '../pantallaCompleta'
 
 type Herramienta = 'mover' | 'flecha' | 'covarianza'
@@ -212,7 +213,7 @@ export default function LienzoSEM({ variables, sintaxis, posiciones, estimacione
           </div>
           <div className="lienzo" ref={ref}>
             <ReactFlow
-              nodes={nodos} edges={aristas} nodeTypes={TIPOS_NODO}
+              nodes={nodos} edges={aristas} nodeTypes={TIPOS_NODO} edgeTypes={TIPOS_ARISTA}
               onNodesChange={onNodesChange} onConnect={onConnect}
               onNodesDelete={onNodesDelete} onEdgesDelete={onEdgesDelete}
               onNodeDoubleClick={(_, n) => renombrar(n.id)}

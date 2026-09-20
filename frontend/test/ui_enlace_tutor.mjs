@@ -27,7 +27,7 @@ const sintaxis = await page.$eval('.lienzo-sem textarea', (t) => t.value)
 if (sintaxis !== modelo) errores.push('el modelo no llegó tal cual: ' + sintaxis)
 await page.evaluate(() => [...document.querySelectorAll('.panel-sintaxis .fila-botones button')].find((b) => b.textContent.startsWith('Estimar el modelo completo'))?.click())
 await page.waitForFunction(() => document.querySelectorAll('.salida').length >= 1, { timeout: 60000 })
-try { await page.waitForFunction(() => document.querySelectorAll('.lienzo .react-flow__edge-textwrapper').length >= 12, { timeout: 15000 }) } catch { errores.push('sin etiquetas sobre las flechas tras estimar') }
+try { await page.waitForFunction(() => document.querySelectorAll('.lienzo .rotulo-arista').length >= 12, { timeout: 15000 }) } catch { errores.push('sin etiquetas sobre las flechas tras estimar') }
 await new Promise((r) => setTimeout(r, 500))
 const ajuste = await page.evaluate(() => {
   const filas = [...document.querySelectorAll('.tabla-salida tr')].map((tr) => [...tr.querySelectorAll('td')].map((td) => td.textContent.trim()))
@@ -37,6 +37,15 @@ const ajuste = await page.evaluate(() => {
 })
 if (ajuste.error) errores.push('la estimación devolvió error: ' + ajuste.error)
 if (!ajuste.CFI) errores.push('no aparecen los índices de ajuste')
+// y el PNG exportado del modelo estimado, para mirarlo
+const { readdirSync, rmSync } = await import('node:fs')
+const carpeta = (await import('node:path')).resolve('test/capturas/descargas_tutor')
+rmSync(carpeta, { recursive: true, force: true }); mkdirSync(carpeta, { recursive: true })
+const cdp = await page.createCDPSession()
+await cdp.send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: carpeta })
+await page.evaluate(() => [...document.querySelectorAll('.herramientas button')].find((b) => b.textContent.trim() === 'PNG')?.click())
+for (let i = 0; i < 40 && !readdirSync(carpeta).some((f) => f.endsWith('.png')); i++) await new Promise((r) => setTimeout(r, 250))
+if (!readdirSync(carpeta).some((f) => f.endsWith('.png'))) errores.push('no se descargó el PNG del modelo')
 await page.screenshot({ path: 'test/capturas/enlace_tutor_produccion.png' })
 console.log(JSON.stringify({ nodos: 16, ...ajuste }))
 if (errores.length) { console.log('ERRORES:'); errores.forEach((e) => console.log(' ', e)) }
