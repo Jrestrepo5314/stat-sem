@@ -160,3 +160,8 @@ input[type="text"], input:not([type]), select, textarea { border: 1px solid var(
 .tabla-operadores td { padding: 2px 8px 2px 0; vertical-align: top; }
 .vacio .o-bien { margin: 12px 0 0; font-size: 13px; }
 .fila-ejemplos { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+
+/* pantalla completa: imprescindible cuando la app va incrustada en el tutor */
+.cabecera .pantalla-completa { white-space: nowrap; }
+.lienzo-cabecera .pantalla-completa { margin-left: auto; white-space: nowrap; }
+.lienzo-cabecera .cerrar { margin-left: 0; }

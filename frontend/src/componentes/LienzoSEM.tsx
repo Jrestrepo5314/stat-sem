@@ -10,6 +10,7 @@ import { aristasDeModelo, etiquetasDeGrafo, modeloDeGrafo, nodosDeModelo } from 
 import { analizar, compatibles, generar, modeloVacio, nombreLatenteLibre, proponerCadena, proponerMedicion, soloMedicion, iguales, type ModeloSEM } from '../sem/sintaxis'
 import type { BloqueGrafo, Variable } from '../tipos'
 import { TIPOS_NODO } from './NodosSEM'
+import { alternarPantallaCompleta, puedePantallaCompleta, usePantallaCompleta } from '../pantallaCompleta'
 
 type Herramienta = 'mover' | 'flecha' | 'covarianza'
 const NOMBRE = /^[A-Za-z_][A-Za-z0-9_.]*$/
@@ -41,6 +42,7 @@ export default function LienzoSEM({ variables, sintaxis, posiciones, estimacione
   const [nodos, setNodos] = useState<Node[]>([])
   const ref = useRef<HTMLDivElement>(null)
   const temporizador = useRef<number | null>(null)
+  const enPantallaCompleta = usePantallaCompleta()
 
   // las estimaciones solo se muestran si corresponden al modelo que está en el lienzo
   const etiquetas = useMemo(() => (estimaciones && compatibles(modeloDeGrafo(estimaciones), modelo)) ? etiquetasDeGrafo(estimaciones) : undefined,
@@ -185,6 +187,12 @@ export default function LienzoSEM({ variables, sintaxis, posiciones, estimacione
             <button onClick={() => exportarPNG(lienzo(), 'modelo_sem.png')}>PNG</button>
             <button onClick={() => exportarSVG(lienzo(), 'modelo_sem.svg')}>SVG</button>
           </div>
+          {puedePantallaCompleta && (
+            <button className="pantalla-completa" onClick={alternarPantallaCompleta}
+              title={enPantallaCompleta ? 'Volver al tamaño normal (Esc)' : 'El lienzo a pantalla completa; Esc para volver'}>
+              {enPantallaCompleta ? '⤡ Salir' : '⛶ Pantalla completa'}
+            </button>
+          )}
           <button className="cerrar" onClick={onCerrar} title="Cerrar">×</button>
         </div>
         <div className="lienzo-cuerpo">

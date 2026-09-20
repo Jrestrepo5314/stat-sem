@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from './api'
+import { alternarPantallaCompleta, puedePantallaCompleta, usePantallaCompleta } from './pantallaCompleta'
 import { MENUS_ANALIZAR, PROCEDIMIENTOS } from './procedimientos'
 import type { ResumenDataset, Salida, Variable } from './tipos'
 import DialogoAnalisis from './componentes/DialogoAnalisis'
@@ -157,6 +158,7 @@ export default function App() {
     <button key={texto} className="menu-item" onClick={fn} disabled={deshabilitado}>{texto}</button>
   )
   const hayDatos = activo !== null
+  const enPantallaCompleta = usePantallaCompleta()
 
   return (
     <div className="app" onMouseMove={onMoverSeparador} onMouseUp={() => { arrastrando.current = false }}>
@@ -195,6 +197,12 @@ export default function App() {
             {datasets.map((d) => <option key={d.id} value={d.id}>{d.nombre} ({d.n_filas}×{d.n_variables})</option>)}
           </select>
         </div>
+        {puedePantallaCompleta && (
+          <button className="pantalla-completa" onClick={alternarPantallaCompleta}
+            title={enPantallaCompleta ? 'Volver al tamaño normal (Esc)' : 'La aplicación a pantalla completa; Esc para volver'}>
+            {enPantallaCompleta ? '⤡ Salir' : '⛶ Pantalla completa'}
+          </button>
+        )}
         <input ref={inputArchivo} type="file" accept=".sav,.csv,.txt,.xlsx,.xls" hidden
           onChange={(e) => { const f = e.target.files?.[0]; if (f) subir(f); e.target.value = '' }} />
       </header>
