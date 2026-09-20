@@ -7,7 +7,7 @@ import '@xyflow/react/dist/style.css'
 import { exportarPNG, exportarSVG } from '../exportar'
 import { disponer, type Posiciones } from '../sem/disposicion'
 import { aristasDeModelo, etiquetasDeGrafo, modeloDeGrafo, nodosDeModelo } from '../sem/grafo'
-import { analizar, generar, iguales, modeloVacio, nombreLatenteLibre, proponerCadena, proponerMedicion, soloMedicion, type ModeloSEM } from '../sem/sintaxis'
+import { analizar, compatibles, generar, modeloVacio, nombreLatenteLibre, proponerCadena, proponerMedicion, soloMedicion, iguales, type ModeloSEM } from '../sem/sintaxis'
 import type { BloqueGrafo, Variable } from '../tipos'
 import { TIPOS_NODO } from './NodosSEM'
 
@@ -43,7 +43,7 @@ export default function LienzoSEM({ variables, sintaxis, posiciones, estimacione
   const temporizador = useRef<number | null>(null)
 
   // las estimaciones solo se muestran si corresponden al modelo que está en el lienzo
-  const etiquetas = useMemo(() => (estimaciones && iguales(modeloDeGrafo(estimaciones), modelo)) ? etiquetasDeGrafo(estimaciones) : undefined,
+  const etiquetas = useMemo(() => (estimaciones && compatibles(modeloDeGrafo(estimaciones), modelo)) ? etiquetasDeGrafo(estimaciones) : undefined,
     [estimaciones, modelo])
 
   useEffect(() => { setNodos(nodosDeModelo(modelo, pos)) }, [modelo, pos])

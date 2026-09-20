@@ -148,3 +148,16 @@ export function soloMedicion(m: ModeloSEM): ModeloSEM {
   r.observadas = r.observadas.filter((o) => enCargas.has(o) || enCov.has(o))
   return r
 }
+
+/**
+ * ¿Las estimaciones corresponden al modelo del lienzo? Igual que `iguales`,
+ * salvo por las covarianzas: el estimador añade por su cuenta las de los
+ * constructos exógenos (en el TAM del libro, FU ~~ CO), y con `iguales` el
+ * lienzo se quedaba mudo después de estimar. Basta con que las covarianzas
+ * declaradas en el lienzo estén en el resultado.
+ */
+export function compatibles(estimado: ModeloSEM, lienzo: ModeloSEM): boolean {
+  const cov = new Set(estimado.covarianzas.map((p) => [...p].sort().join('<>')))
+  const declaradas = lienzo.covarianzas.every((p) => cov.has([...p].sort().join('<>')))
+  return declaradas && iguales({ ...estimado, covarianzas: [] }, { ...lienzo, covarianzas: [] })
+}

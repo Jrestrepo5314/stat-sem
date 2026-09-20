@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { analizar, generar, iguales, modeloVacio, nombreLatenteLibre, proponerCadena, proponerMedicion, soloMedicion } from '../src/sem/sintaxis'
+import { analizar, compatibles, generar, iguales, modeloVacio, nombreLatenteLibre, proponerCadena, proponerMedicion, soloMedicion } from '../src/sem/sintaxis'
 import { disponer } from '../src/sem/disposicion'
 
 const EJEMPLO = `
@@ -74,6 +74,22 @@ describe('disponer', () => {
     expect(pos.edad.y).toBeLessThan(pos.clima.y)     // observada suelta, arriba
     expect(Object.keys(pos)).toHaveLength(10)
   })
+  it('apila en bandas los constructos de una misma capa: el TAM del libro', () => {
+    const { modelo } = analizar(`FU =~ fu1 + fu2
+UP =~ up1 + up2
+CO =~ co1 + co2
+IA =~ ia1 + ia2
+UP ~ FU
+IA ~ UP + FU + CO`)
+    const pos = disponer(modelo)
+    expect(pos.FU.x).toBe(pos.CO.x)                 // los dos exógenos en la primera capa…
+    expect(pos.FU.y).not.toBe(pos.CO.y)             // …pero en bandas distintas
+    expect(pos.UP.x).toBeGreaterThan(pos.FU.x)
+    expect(pos.IA.x).toBeGreaterThan(pos.UP.x)
+    expect(pos.IA.y).toBeGreaterThan(pos.FU.y)      // las capas de un solo constructo se centran
+    expect(pos.IA.y).toBeLessThan(pos.CO.y)
+    expect(pos.co1.y).toBe(pos.CO.y + 180)          // cada banda lleva sus indicadores debajo
+  })
   it('respeta las posiciones previas', () => {
     const { modelo } = analizar('f =~ a + b')
     const pos = disponer(modelo, { a: { x: 999, y: 999 } })
@@ -116,5 +132,18 @@ describe('propuestas automáticas', () => {
     expect(cfa.regresiones).toEqual([])
     expect(cfa.observadas.sort()).toEqual(['a', 'b', 'c', 'd', 'e'])
     expect(cfa.covarianzas).toEqual([['a', 'b']])
+  })
+})
+
+describe('compatibles', () => {
+  it('admite las covarianzas que el estimador añade entre exógenos, pero no otras diferencias', () => {
+    const lienzo = analizar('FU =~ fu1 + fu2\nCO =~ co1 + co2\nIA =~ ia1 + ia2\nIA ~ FU + CO').modelo
+    const estimado = analizar('FU =~ fu1 + fu2\nCO =~ co1 + co2\nIA =~ ia1 + ia2\nIA ~ FU + CO\nFU ~~ CO').modelo
+    expect(iguales(estimado, lienzo)).toBe(false)
+    expect(compatibles(estimado, lienzo)).toBe(true)
+    const otro = analizar('FU =~ fu1 + fu2\nCO =~ co1 + co2\nIA =~ ia1 + ia2\nIA ~ FU').modelo
+    expect(compatibles(otro, lienzo)).toBe(false)
+    const conCov = analizar('FU =~ fu1 + fu2\nCO =~ co1 + co2\nIA =~ ia1 + ia2\nIA ~ FU + CO\nfu1 ~~ fu2').modelo
+    expect(compatibles(estimado, conCov)).toBe(false)
   })
 })

@@ -80,6 +80,7 @@ cd backend; python -m pytest tests -q          # 16 pruebas contra la API, contr
 cd frontend; npx vitest run                    # 9 pruebas del núcleo sintaxis ↔ modelo ↔ disposición
 cd frontend; npx tsc -b; node test/ui_humo.mjs # prueba de humo de la interfaz con capturas (requiere los dos servidores)
 cd frontend; node test/ui_asistente.mjs      # el camino fácil al SEM: ejemplo guiado, asistente, CFA y enlace profundo
+cd frontend; node test/ui_enlace_tutor.mjs   # contra producción: el enlace del tutor con los datos y el modelo del cap. 8
 ```
 
 Los datos de cada sesión se guardan en `backend/data/sesiones/` (ignorada por git) y sobreviven a
