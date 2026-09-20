@@ -37,6 +37,10 @@ export const api = {
 
   importarURL: (url: string) => pedir<ResumenDataset>('/datasets/importar', json({ url })),
 
+  listarEjemplos: () => pedir<{ clave: string; titulo: string; descripcion: string; modelo: string }[]>('/ejemplos'),
+
+  abrirEjemplo: (clave: string) => pedir<ResumenDataset>(`/datasets/ejemplo/${encodeURIComponent(clave)}`, { method: 'POST' }),
+
   nuevoDataset: (nombre = 'Sin título') =>
     pedir<ResumenDataset>(`/datasets/nuevo?nombre=${encodeURIComponent(nombre)}`, { method: 'POST' }),
 

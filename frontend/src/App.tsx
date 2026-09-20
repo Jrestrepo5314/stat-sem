@@ -51,15 +51,44 @@ export default function App() {
 
   useEffect(() => { cargarLista() }, [cargarLista])
 
-  // ?abrir=<url>: el tutor del libro manda aquí sus conjuntos de datos
+  /** Deja el modelo en el lienzo y lo abre: es lo que hace fácil «ver un SEM». */
+  const sembrarSEM = useCallback((sintaxis: string) => {
+    setModeloSEM({ sintaxis, posiciones: {} })
+    setUltimoGrafo(null)
+    setLienzoSEM(true)
+  }, [])
+
+  /** Abre un conjunto de ejemplo y, si se pide, su modelo SEM sugerido en el lienzo. */
+  const abrirEjemplo = useCallback(async (clave: string, conModelo: boolean) => {
+    try {
+      const r = await api.abrirEjemplo(clave)
+      await cargarLista(); await abrirDataset(r.id)
+      avisar(`Abierto ${r.nombre}: ${r.n_filas} casos, ${r.n_variables} variables`, 'info')
+      if (conModelo) {
+        const e = (await api.listarEjemplos()).find((x) => x.clave === clave)
+        if (e?.modelo) sembrarSEM(e.modelo)
+      }
+    } catch (e) { avisar((e as Error).message) }
+  }, [cargarLista, abrirDataset, avisar, sembrarSEM])
+
+  // Parámetros de la URL, con los que el tutor del libro llega aquí con todo preparado:
+  //   ?abrir=<url>       descarga y abre ese conjunto de datos (sitios del autor o Zenodo)
+  //   ?ejemplo=<clave>   abre uno de los conjuntos de ejemplo de la app
+  //   ?modelo=<sintaxis> deja ese modelo en el lienzo SEM y lo abre
+  //   ?sem=1             abre el lienzo aunque no venga modelo
+  // Se leen todos ANTES de limpiar la barra de direcciones.
   useEffect(() => {
-    const url = new URLSearchParams(location.search).get('abrir')
-    if (!url) return
+    const q = new URLSearchParams(location.search)
+    const url = q.get('abrir'), ejemplo = q.get('ejemplo'), modelo = q.get('modelo'), sem = q.get('sem')
+    if (!url && !ejemplo && !modelo && !sem) return
     history.replaceState(null, '', location.pathname)
+    const despues = () => { if (modelo) sembrarSEM(modelo); else if (sem) setLienzoSEM(true) }
+    if (ejemplo) { abrirEjemplo(ejemplo, false).then(despues); return }
+    if (!url) { despues(); return }
     api.importarURL(url)
-      .then(async (r) => { await cargarLista(); await abrirDataset(r.id); avisar(`Abierto ${r.nombre}: ${r.n_filas} casos, ${r.n_variables} variables`, 'info') })
+      .then(async (r) => { await cargarLista(); await abrirDataset(r.id); avisar(`Abierto ${r.nombre}: ${r.n_filas} casos, ${r.n_variables} variables`, 'info'); despues() })
       .catch((e) => avisar((e as Error).message))
-  }, [cargarLista, abrirDataset, avisar])
+  }, [cargarLista, abrirDataset, avisar, abrirEjemplo, sembrarSEM])
 
   const subir = async (archivo: File) => {
     try {
@@ -136,6 +165,7 @@ export default function App() {
         <nav className="menus">
           {menu('Archivo', <>
             {item('Abrir datos… (.sav, .csv, .xlsx)', () => inputArchivo.current?.click())}
+            {item('Abrir la encuesta de ejemplo', () => abrirEjemplo('encuesta_demo', false))}
             {item('Nuevo conjunto de datos', nuevo)}
             {item('Guardar como .sav', () => descargar('sav'), !hayDatos)}
             {item('Exportar a CSV', () => descargar('csv'), !hayDatos)}
@@ -156,6 +186,7 @@ export default function App() {
           </>)}
           {menu('SEM', <>
             {item('Lienzo y sintaxis del modelo…', () => setLienzoSEM(true), !hayDatos)}
+            {item('Ejemplo guiado: clima → compromiso → desempeño', () => abrirEjemplo('encuesta_demo', true))}
           </>)}
         </nav>
         <div className="selector-datasets">
@@ -190,6 +221,11 @@ export default function App() {
               <p>Arrastre aquí un archivo <b>.sav</b> de SPSS, un <b>.csv</b> o un <b>.xlsx</b>, o use <em>Archivo → Abrir datos</em>.</p>
               <button className="primario" onClick={() => inputArchivo.current?.click()}>Abrir datos…</button>
               <button onClick={nuevo}>Nuevo conjunto vacío</button>
+              <p className="o-bien">¿Sin datos a mano? Practique con los de la aplicación:</p>
+              <div className="fila-ejemplos">
+                <button onClick={() => abrirEjemplo('encuesta_demo', false)} title="400 empleados: clima, compromiso y desempeño con tres ítems cada uno, más sexo, área, antigüedad y salario">Abrir la encuesta de ejemplo</button>
+                <button onClick={() => abrirEjemplo('encuesta_demo', true)} title="Abre la encuesta con su modelo ya escrito en el lienzo: solo queda pulsar Estimar">Ver un SEM de ejemplo, listo para estimar</button>
+              </div>
             </div>
           )}
         </section>

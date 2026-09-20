@@ -107,7 +107,7 @@ for (const id of ['F1', 'satisfaccion']) {
   await espera(200)
 }
 await page.waitForFunction(() => document.querySelectorAll('.lienzo .react-flow__node').length === 12, { timeout: 5000 })
-await clicTexto('.panel-sintaxis .fila-botones button', 'Estimar')
+await clicTexto('.panel-sintaxis .fila-botones button', 'Estimar el modelo completo')
 await page.waitForFunction(() => document.querySelectorAll('.salida').length >= 3, { timeout: 30000 })
 await page.waitForFunction(() => document.querySelectorAll('.lienzo .react-flow__edge-textwrapper').length >= 9, { timeout: 10000 })
 await espera(600)

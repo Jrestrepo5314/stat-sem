@@ -89,3 +89,62 @@ export function nombreLatenteLibre(m: ModeloSEM, base = 'F'): string {
   while (m.latentes.includes(`${base}${k}`) || m.observadas.includes(`${base}${k}`)) k++
   return `${base}${k}`
 }
+
+// ---------------------------------------------------------------------------
+// Propuestas automáticas: la vía fácil para quien nunca ha escrito un modelo.
+// ---------------------------------------------------------------------------
+
+/**
+ * Propone el modelo de medición a partir de los nombres de las variables.
+ *
+ * Una encuesta bien nombrada ya lleva el modelo escrito: «fu1, fu2, fu3» son los
+ * tres ítems del constructo FU, «cli1..cli3» los de CLI. Se agrupan las
+ * variables por su prefijo alfabético; cada grupo con dos o más ítems se
+ * convierte en un constructo latente, nombrado con el prefijo en mayúsculas
+ * como hace el libro (FU =~ fu1 + fu2 + fu3). Lo que no encaje en el patrón
+ * (id, sexo, salario) se deja fuera: el estudiante lo añade si lo necesita.
+ */
+export function proponerMedicion(nombres: string[]): ModeloSEM {
+  const grupos = new Map<string, string[]>()
+  for (const n of nombres) {
+    const m = /^([A-Za-z][A-Za-z_]*?)[_.]?(\d+)$/.exec(n)
+    if (!m) continue
+    const prefijo = m[1]
+    if (!grupos.has(prefijo)) grupos.set(prefijo, [])
+    grupos.get(prefijo)!.push(n)
+  }
+  const modelo = modeloVacio()
+  for (const [prefijo, items] of grupos) {
+    if (items.length < 2) continue
+    let latente = prefijo.toUpperCase()
+    // si el nombre en mayúsculas choca con una variable observada, se marca
+    if (nombres.includes(latente) || modelo.latentes.includes(latente)) latente = `${latente}_lat`
+    modelo.latentes.push(latente)
+    for (const it of items) { modelo.cargas.push([latente, it]); modelo.observadas.push(it) }
+  }
+  return modelo
+}
+
+/**
+ * Propone un modelo estructural en cadena sobre los constructos existentes:
+ * el primero explica al segundo, el segundo al tercero… (clima → compromiso →
+ * desempeño). Es la hipótesis más sencilla de leer y de corregir: el estudiante
+ * arrastra o reescribe las flechas que su teoría diga distinto.
+ */
+export function proponerCadena(m: ModeloSEM): ModeloSEM {
+  const r = structuredClone(m)
+  r.regresiones = []
+  for (let i = 1; i < r.latentes.length; i++) r.regresiones.push([r.latentes[i], r.latentes[i - 1]])
+  return r
+}
+
+/** Solo el modelo de medición (CFA): las cargas y las covarianzas, sin regresiones. */
+export function soloMedicion(m: ModeloSEM): ModeloSEM {
+  const r = structuredClone(m)
+  r.regresiones = []
+  // las observadas que solo participaban como predictores o dependientes salen
+  const enCargas = new Set(r.cargas.map(([, o]) => o))
+  const enCov = new Set(r.covarianzas.flat())
+  r.observadas = r.observadas.filter((o) => enCargas.has(o) || enCov.has(o))
+  return r
+}

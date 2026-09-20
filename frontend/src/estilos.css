@@ -148,3 +148,15 @@ input[type="text"], input:not([type]), select, textarea { border: 1px solid var(
 .panel-sintaxis textarea { flex: 1; min-height: 160px; font-family: Consolas, "Cascadia Mono", monospace; font-size: 13px; white-space: pre; resize: none; }
 .panel-sintaxis label { display: flex; flex-direction: column; gap: 3px; }
 .panel-sintaxis label.check { flex-direction: row; align-items: center; }
+
+/* asistente del lienzo SEM: la vía fácil para quien nunca ha escrito un modelo */
+.asistente-sem { border: 1px solid var(--linea); border-radius: 6px; padding: 8px 10px; background: #f7f9fb; font-size: 12.5px; }
+.asistente-sem ol { margin: 4px 0 8px; padding-left: 18px; }
+.asistente-sem li { margin: 2px 0; }
+.asistente-sem code { font-family: Consolas, "Cascadia Mono", monospace; font-size: 12px; background: #fff; border: 1px solid var(--linea); border-radius: 3px; padding: 0 3px; }
+.fila-asistente { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+.asistente-sem details summary { cursor: pointer; color: var(--acento); }
+.tabla-operadores { border-collapse: collapse; margin: 6px 0; }
+.tabla-operadores td { padding: 2px 8px 2px 0; vertical-align: top; }
+.vacio .o-bien { margin: 12px 0 0; font-size: 13px; }
+.fila-ejemplos { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { analizar, generar, iguales, modeloVacio, nombreLatenteLibre } from '../src/sem/sintaxis'
+import { analizar, generar, iguales, modeloVacio, nombreLatenteLibre, proponerCadena, proponerMedicion, soloMedicion } from '../src/sem/sintaxis'
 import { disponer } from '../src/sem/disposicion'
 
 const EJEMPLO = `
@@ -79,5 +79,42 @@ describe('disponer', () => {
     const pos = disponer(modelo, { a: { x: 999, y: 999 } })
     expect(pos.a).toEqual({ x: 999, y: 999 })
     expect(pos.b.y).toBe(340)
+  })
+})
+
+describe('propuestas automáticas', () => {
+  const ENCUESTA = ['id', 'cli1', 'cli2', 'cli3', 'com1', 'com2', 'com3', 'des1', 'des2', 'des3', 'sexo', 'area', 'antiguedad', 'salario']
+
+  it('agrupa los ítems por prefijo y nombra el constructo en mayúsculas', () => {
+    const m = proponerMedicion(ENCUESTA)
+    expect(m.latentes).toEqual(['CLI', 'COM', 'DES'])
+    expect(m.cargas).toEqual([['CLI', 'cli1'], ['CLI', 'cli2'], ['CLI', 'cli3'], ['COM', 'com1'], ['COM', 'com2'], ['COM', 'com3'], ['DES', 'des1'], ['DES', 'des2'], ['DES', 'des3']])
+    expect(m.observadas).not.toContain('id')
+    expect(m.observadas).not.toContain('salario')
+    expect(m.regresiones).toEqual([])
+  })
+
+  it('admite separadores y deja fuera los grupos de un solo ítem', () => {
+    const m = proponerMedicion(['fu_1', 'fu_2', 'up.1', 'up.2', 'x1', 'edad'])
+    expect(m.latentes).toEqual(['FU', 'UP'])
+    expect(m.observadas).toEqual(['fu_1', 'fu_2', 'up.1', 'up.2'])
+  })
+
+  it('el modelo propuesto se escribe y se vuelve a leer igual', () => {
+    const m = proponerMedicion(ENCUESTA)
+    expect(iguales(analizar(generar(m)).modelo, m)).toBe(true)
+  })
+
+  it('la cadena enlaza los constructos en orden', () => {
+    const m = proponerCadena(proponerMedicion(ENCUESTA))
+    expect(m.regresiones).toEqual([['COM', 'CLI'], ['DES', 'COM']])
+  })
+
+  it('solo medición quita las regresiones y las observadas que solo eran predictores', () => {
+    const m = analizar('f =~ a + b + c\ng =~ d + e\ng ~ f + edad\na ~~ b').modelo
+    const cfa = soloMedicion(m)
+    expect(cfa.regresiones).toEqual([])
+    expect(cfa.observadas.sort()).toEqual(['a', 'b', 'c', 'd', 'e'])
+    expect(cfa.covarianzas).toEqual([['a', 'b']])
   })
 })

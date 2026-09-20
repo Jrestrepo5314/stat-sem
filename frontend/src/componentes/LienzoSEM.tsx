@@ -7,7 +7,7 @@ import '@xyflow/react/dist/style.css'
 import { exportarPNG, exportarSVG } from '../exportar'
 import { disponer, type Posiciones } from '../sem/disposicion'
 import { aristasDeModelo, etiquetasDeGrafo, modeloDeGrafo, nodosDeModelo } from '../sem/grafo'
-import { analizar, generar, iguales, modeloVacio, nombreLatenteLibre, type ModeloSEM } from '../sem/sintaxis'
+import { analizar, generar, iguales, modeloVacio, nombreLatenteLibre, proponerCadena, proponerMedicion, soloMedicion, type ModeloSEM } from '../sem/sintaxis'
 import type { BloqueGrafo, Variable } from '../tipos'
 import { TIPOS_NODO } from './NodosSEM'
 
@@ -143,12 +143,27 @@ export default function LienzoSEM({ variables, sintaxis, posiciones, estimacione
   const limpiar = () => { if (modelo.latentes.length + modelo.observadas.length === 0 || confirm('¿Vaciar el modelo?')) cambiarModelo(modeloVacio(), {}) }
   const reordenar = () => setPos(disponer(modelo))
 
-  const ejecutar = async () => {
+  const ejecutar = async (sintaxisAEstimar = texto) => {
     setOcupado(true); setError(null)
-    try { await onEjecutar({ sintaxis: texto, estimador, estandarizado }) }
+    try { await onEjecutar({ sintaxis: sintaxisAEstimar, estimador, estandarizado }) }
     catch (e) { setError((e as Error).message) }
     finally { setOcupado(false) }
   }
+
+  // --- el asistente: la vía fácil para quien nunca ha escrito un modelo
+  const numericas = variables.filter((v) => v.tipo === 'numerica').map((v) => v.nombre)
+  const medicionPropuesta = useMemo(() => proponerMedicion(numericas), [variables]) // eslint-disable-line react-hooks/exhaustive-deps
+  const hayModelo = modelo.latentes.length + modelo.observadas.length > 0
+  /** Paso 1: el modelo de medición sale de los nombres de las variables (fu1, fu2, fu3 → FU). */
+  const proponerPaso1 = () => {
+    if (hayModelo && !confirm('Se reemplaza el modelo actual por la medición propuesta. ¿Continuar?')) return
+    cambiarModelo(medicionPropuesta, {})
+  }
+  /** Paso 2: una cadena entre los constructos, en el orden en que aparecen. */
+  const proponerPaso2 = () => cambiarModelo(proponerCadena(modelo))
+  /** Estimar solo la medición (CFA) antes de creer en las flechas estructurales. */
+  const estimarCFA = () => ejecutar(generar(soloMedicion(modelo)))
+  const tieneRegresiones = modelo.regresiones.length > 0
 
   const lienzo = () => ref.current?.querySelector('.react-flow') as HTMLElement
   const enModelo = new Set([...modelo.observadas, ...modelo.latentes])
@@ -199,6 +214,35 @@ export default function LienzoSEM({ variables, sintaxis, posiciones, estimacione
             </ReactFlow>
           </div>
           <div className="panel-sintaxis">
+            <div className="asistente-sem">
+              <div className="titulo-lista">¿Por dónde empiezo? Un SEM en tres pasos</div>
+              <ol>
+                <li><b>Medición.</b> Cada constructo se mide con sus ítems. Si las variables se llaman <code>fu1, fu2, fu3</code>, el asistente las agrupa solo.</li>
+                <li><b>Estructura.</b> Qué constructo explica a cuál: las flechas de la teoría.</li>
+                <li><b>Estimar.</b> Primero solo la medición; si sus cargas y su ajuste son buenos, el modelo completo.</li>
+              </ol>
+              <div className="fila-asistente">
+                <button onClick={proponerPaso1} disabled={medicionPropuesta.latentes.length === 0}
+                  title={medicionPropuesta.latentes.length ? `Constructos detectados: ${medicionPropuesta.latentes.join(', ')}` : 'No hay grupos de ítems numerados (como fu1, fu2, fu3) entre las variables'}>
+                  1 · Proponer la medición
+                </button>
+                <button onClick={proponerPaso2} disabled={modelo.latentes.length < 2}
+                  title="Encadena los constructos en el orden en que aparecen: el primero explica al segundo, el segundo al tercero…">
+                  2 · Proponer la estructura
+                </button>
+              </div>
+              <details>
+                <summary>¿Cómo se escribe un modelo?</summary>
+                <table className="tabla-operadores">
+                  <tbody>
+                    <tr><td><code>=~</code></td><td>«se mide con»: <code>FU =~ fu1 + fu2 + fu3</code></td></tr>
+                    <tr><td><code>~</code></td><td>«es explicado por»: <code>IA ~ UP + FU</code></td></tr>
+                    <tr><td><code>~~</code></td><td>«covaría con»: <code>fu1 ~~ fu2</code></td></tr>
+                  </tbody>
+                </table>
+                <div className="tenue">Los constructos van a la izquierda de <code>=~</code>; la primera carga de cada uno se fija en 1 para identificar el modelo. Lee el ajuste con CFI y TLI ≥ 0,90 y RMSEA y SRMR ≤ 0,08.</div>
+              </details>
+            </div>
             <div className="titulo-lista">Sintaxis (editable; el lienzo se actualiza al escribir)</div>
             <textarea value={texto} spellCheck={false} onChange={(e) => onTexto(e.target.value)}
               placeholder={'latente =~ item1 + item2 + item3\ndependiente ~ predictor\na ~~ b'} />
@@ -217,7 +261,12 @@ export default function LienzoSEM({ variables, sintaxis, posiciones, estimacione
             {error && <div className="error-dialogo">{error}</div>}
             <div className="fila-botones">
               <button onClick={onCerrar}>Cerrar</button>
-              <button className="primario" onClick={ejecutar} disabled={ocupado || !texto.trim()}>{ocupado ? 'Estimando…' : 'Estimar'}</button>
+              {tieneRegresiones && (
+                <button onClick={estimarCFA} disabled={ocupado} title="Estima solo las cargas (análisis factorial confirmatorio), sin las flechas estructurales">
+                  Estimar solo la medición
+                </button>
+              )}
+              <button className="primario" onClick={() => ejecutar()} disabled={ocupado || !texto.trim()}>{ocupado ? 'Estimando…' : tieneRegresiones ? 'Estimar el modelo completo' : 'Estimar'}</button>
             </div>
           </div>
         </div>

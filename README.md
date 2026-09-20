@@ -44,7 +44,20 @@ regenera con `python backend/scripts/generar_demo.py`.
    sobre las flechas del lienzo. Devuelve cargas, regresiones, varianzas, índices de ajuste (χ²,
    CFI, TLI, NFI, GFI, AGFI, RMSEA, SRMR, AIC, BIC) y el diagrama de rutas del resultado. Tanto
    el lienzo como el diagrama se exportan a **PNG y SVG**.
+   **La vía fácil**: el panel de sintaxis lleva un asistente en tres pasos. «1 · Proponer la
+   medición» agrupa los ítems numerados (`fu1, fu2, fu3` → `FU =~ fu1 + fu2 + fu3`) en constructos;
+   «2 · Proponer la estructura» los encadena en el orden en que aparecen; «Estimar solo la medición»
+   ajusta el CFA sin las flechas estructurales antes del modelo completo. Y `SEM → Ejemplo guiado`
+   (o «Ver un SEM de ejemplo» en la pantalla vacía) abre la encuesta de demostración con su modelo
+   ya escrito: solo queda pulsar Estimar.
 5. **Archivo → Guardar como .sav** conserva etiquetas, perdidos y nivel de medida.
+
+## Parámetros de la URL
+
+El tutor del libro llega con todo preparado: `?abrir=<url>` descarga y abre un conjunto de datos
+(solo desde los sitios del autor o Zenodo), `?ejemplo=encuesta_demo` abre el de ejemplo,
+`?modelo=<sintaxis>` deja ese modelo en el lienzo SEM y lo abre, y `?sem=1` abre el lienzo vacío.
+La API expone `GET /api/ejemplos` (lista con el modelo sugerido) y `POST /api/datasets/ejemplo/{clave}`.
 
 ## Procedimientos
 
@@ -66,6 +79,7 @@ regenera con `python backend/scripts/generar_demo.py`.
 cd backend; python -m pytest tests -q          # 16 pruebas contra la API, contrastadas con scipy/statsmodels
 cd frontend; npx vitest run                    # 9 pruebas del núcleo sintaxis ↔ modelo ↔ disposición
 cd frontend; npx tsc -b; node test/ui_humo.mjs # prueba de humo de la interfaz con capturas (requiere los dos servidores)
+cd frontend; node test/ui_asistente.mjs      # el camino fácil al SEM: ejemplo guiado, asistente, CFA y enlace profundo
 ```
 
 Los datos de cada sesión se guardan en `backend/data/sesiones/` (ignorada por git) y sobreviven a

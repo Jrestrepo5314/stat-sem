@@ -103,6 +103,48 @@ def importar(cuerpo: ImportarURL, cliente: str = Cliente):
     return almacen.crear(nombre, df, variables, cliente).resumen()
 
 
+# ---------------------------------------------------------------------------
+# Datos de ejemplo con un clic. La encuesta de demostración existía desde el
+# principio (backend/data/ejemplos), pero solo la usaban las pruebas: el
+# estudiante llegaba a una pantalla vacía sin nada que abrir.
+# ---------------------------------------------------------------------------
+CARPETA_EJEMPLOS = Path(__file__).resolve().parent.parent / "data" / "ejemplos"
+
+EJEMPLOS = {
+    "encuesta_demo": {
+        "archivo": "encuesta_demo.sav",
+        "titulo": "Encuesta de clima laboral",
+        "descripcion": "400 empleados; tres constructos con tres ítems cada uno "
+                       "(clima, compromiso y desempeño) más sexo, área, antigüedad y salario.",
+        # El modelo con el que se generaron los datos: sirve de ejemplo guiado.
+        "modelo": "clima =~ cli1 + cli2 + cli3\n"
+                  "compromiso =~ com1 + com2 + com3\n"
+                  "desempeno =~ des1 + des2 + des3\n"
+                  "compromiso ~ clima\n"
+                  "desempeno ~ compromiso",
+    },
+}
+
+
+@router.get("/ejemplos")
+def listar_ejemplos():
+    """Conjuntos de datos de ejemplo que trae la aplicación, con su modelo SEM sugerido."""
+    return [{"clave": k, **{c: v for c, v in e.items() if c != "archivo"}} for k, e in EJEMPLOS.items()]
+
+
+@router.post("/datasets/ejemplo/{clave}", response_model=ResumenDataset)
+def abrir_ejemplo(clave: str, cliente: str = Cliente):
+    """Abre uno de los conjuntos de ejemplo como un dataset nuevo del cliente."""
+    e = EJEMPLOS.get(clave)
+    if not e:
+        raise HTTPException(404, f"No hay un ejemplo llamado {clave}")
+    ruta = CARPETA_EJEMPLOS / e["archivo"]
+    if not ruta.exists():
+        raise HTTPException(500, f"Falta el archivo de ejemplo {e['archivo']}")
+    df, variables = leer_archivo(ruta)
+    return almacen.crear(e["archivo"], df, variables, cliente).resumen()
+
+
 @router.post("/datasets/nuevo", response_model=ResumenDataset)
 def nuevo(nombre: str = "Sin título", filas: int = 0, cliente: str = Cliente):
     df = pd.DataFrame(index=range(filas))
